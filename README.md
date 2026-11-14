@@ -1,4 +1,4 @@
-# Nexo Docs — Fase 1
+# Nexo Docs - Fase 1
 
 Aplicativo Flutter Web migrado do DartPad para uma estrutura MVVM. Nesta fase, o cadastro e a autenticação são simulados e os documentos permanecem somente durante a sessão, exatamente como no código original.
 

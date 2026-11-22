@@ -1,48 +1,44 @@
 import 'package:flutter/material.dart';
 
+import '../models/documento.dart';
+import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/documentos_viewmodel.dart';
+import '../viewmodels/tema_viewmodel.dart';
 
 const nomeDesenvolvedor = 'Kevilyn Bitencourt';
 
-class HomeView extends StatefulWidget {
-  const HomeView({super.key});
+class HomeView extends StatelessWidget {
+  const HomeView({
+    super.key,
+    required this.authViewModel,
+    required this.documentosViewModel,
+    required this.temaViewModel,
+  });
 
-  @override
-  State<HomeView> createState() => _HomeViewState();
-}
+  final AuthViewModel authViewModel;
+  final DocumentosViewModel documentosViewModel;
+  final TemaViewModel temaViewModel;
 
-class _HomeViewState extends State<HomeView> {
-  final _viewModel = DocumentosViewModel();
-  final _editor = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _editor.text = _viewModel.conteudoSelecionado;
+  Future<void> _criarDocumento(BuildContext context) async {
+    try {
+      final documento = await documentosViewModel.novo();
+      if (context.mounted) {
+        Navigator.pushNamed(context, '/editor', arguments: documento.id);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível criar o documento.')),
+        );
+      }
+    }
   }
 
-  @override
-  void dispose() {
-    _editor.dispose();
-    _viewModel.dispose();
-    super.dispose();
-  }
-
-  void _abrir(int indice) {
-    _viewModel.abrir(indice);
-    _editor.text = _viewModel.conteudoSelecionado;
-  }
-
-  void _novo() {
-    _viewModel.novo();
-    _editor.text = _viewModel.conteudoSelecionado;
-  }
-
-  void _salvar() {
-    _viewModel.salvar(_editor.text);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Documento salvo nesta sessão.')),
-    );
+  Future<void> _sair(BuildContext context) async {
+    await authViewModel.sair();
+    if (context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+    }
   }
 
   @override
@@ -52,9 +48,18 @@ class _HomeViewState extends State<HomeView> {
         title: const Text('Nexo Docs'),
         actions: [
           IconButton(
+            tooltip: temaViewModel.escuro
+                ? 'Ativar tema claro'
+                : 'Ativar tema escuro',
+            icon: Icon(
+              temaViewModel.escuro ? Icons.light_mode : Icons.dark_mode,
+            ),
+            onPressed: temaViewModel.alternar,
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sair',
-            onPressed: () => Navigator.pushReplacementNamed(context, '/'),
+            onPressed: () => _sair(context),
           ),
         ],
       ),
@@ -62,63 +67,87 @@ class _HomeViewState extends State<HomeView> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
           child: ListenableBuilder(
-            listenable: _viewModel,
-            builder: (context, _) => ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                Text('Minha biblioteca',
-                    style: Theme.of(context).textTheme.headlineSmall),
-                const Text('Abra um documento ou comece um novo.'),
-                const SizedBox(height: 12),
-                for (var i = 0; i < _viewModel.documentos.length; i++)
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.description_outlined),
-                      title: Text('Documento ${i + 1}'),
-                      selected: i == _viewModel.selecionado,
-                      onTap: () => _abrir(i),
-                    ),
+            listenable: documentosViewModel,
+            builder: (context, _) {
+              if (documentosViewModel.carregando) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final documentos = documentosViewModel.documentos;
+              if (documentos.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'Sua biblioteca está vazia. Crie um documento para começar.',
                   ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _editor,
-                  minLines: 8,
-                  maxLines: 12,
-                  readOnly: _viewModel.modoLeitura,
-                  decoration: InputDecoration(
-                    labelText: 'Documento ${_viewModel.selecionado + 1}',
-                    alignLabelWithHint: true,
-                    border: const OutlineInputBorder(),
+                );
+              }
+              return ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  Text(
+                    'Minha biblioteca',
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton(
-                      onPressed: _novo,
-                      child: const Text('Novo Documento'),
+                  const Text('Abra um documento ou comece um novo.'),
+                  const SizedBox(height: 12),
+                  for (var i = 0; i < documentos.length; i++)
+                    _DocumentoTile(
+                      documento: documentos[i],
+                      numero: i + 1,
+                      selecionado:
+                          documentos[i].id == documentosViewModel.selecionadoId,
+                      onTap: () {
+                        documentosViewModel.abrir(documentos[i].id);
+                        Navigator.pushNamed(
+                          context,
+                          '/editor',
+                          arguments: documentos[i].id,
+                        );
+                      },
                     ),
-                    FilledButton(
-                      onPressed: _viewModel.modoLeitura ? null : _salvar,
-                      child: const Text('Salvar'),
-                    ),
-                    TextButton(
-                      onPressed: _viewModel.alternarModoLeitura,
-                      child: Text(_viewModel.modoLeitura
-                          ? 'Modo Edição'
-                          : 'Modo Leitura'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Desenvolvedora: $nomeDesenvolvedor',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
-      bottomNavigationBar: const BottomAppBar(
-        child: Center(child: Text('Desenvolvedora: $nomeDesenvolvedor')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _criarDocumento(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Novo documento'),
+      ),
+    );
+  }
+}
+
+class _DocumentoTile extends StatelessWidget {
+  const _DocumentoTile({
+    required this.documento,
+    required this.numero,
+    required this.selecionado,
+    required this.onTap,
+  });
+
+  final Documento documento;
+  final int numero;
+  final bool selecionado;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final titulo = documento.conteudo.trim().split('\n').first;
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.description_outlined),
+        title: Text(titulo.isEmpty ? 'Documento $numero' : titulo),
+        subtitle: Text('Documento $numero', maxLines: 1),
+        selected: selecionado,
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

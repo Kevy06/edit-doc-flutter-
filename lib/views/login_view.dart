@@ -4,7 +4,9 @@ import '../utils/validadores.dart';
 import '../viewmodels/auth_viewmodel.dart';
 
 class LoginView extends StatefulWidget {
-  const LoginView({super.key});
+  const LoginView({super.key, required this.viewModel});
+
+  final AuthViewModel viewModel;
 
   @override
   State<LoginView> createState() => _LoginViewState();
@@ -12,18 +14,32 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _viewModel = AuthViewModel();
+  final _email = TextEditingController();
+  final _senha = TextEditingController();
 
   @override
   void dispose() {
-    _viewModel.dispose();
+    _email.dispose();
+    _senha.dispose();
     super.dispose();
   }
 
   Future<void> _enviar() async {
     if (!_formKey.currentState!.validate()) return;
-    await _viewModel.autenticar();
-    if (mounted) Navigator.pushReplacementNamed(context, '/home');
+    final autenticado = await widget.viewModel.autenticar(
+      _email.text,
+      _senha.text,
+    );
+    if (!mounted) return;
+    if (autenticado) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.viewModel.erro ?? 'Não foi possível entrar.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -39,10 +55,13 @@ class _LoginViewState extends State<LoginView> {
               shrinkWrap: true,
               padding: const EdgeInsets.all(24),
               children: [
-                Text('Acesse sua biblioteca',
-                    style: Theme.of(context).textTheme.headlineSmall),
+                Text(
+                  'Acesse sua biblioteca',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 20),
                 TextFormField(
+                  controller: _email,
                   decoration: const InputDecoration(
                     labelText: 'E-mail',
                     border: OutlineInputBorder(),
@@ -52,6 +71,7 @@ class _LoginViewState extends State<LoginView> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
+                  controller: _senha,
                   decoration: const InputDecoration(
                     labelText: 'Senha',
                     border: OutlineInputBorder(),
@@ -61,9 +81,9 @@ class _LoginViewState extends State<LoginView> {
                 ),
                 const SizedBox(height: 20),
                 ListenableBuilder(
-                  listenable: _viewModel,
+                  listenable: widget.viewModel,
                   builder: (context, _) => FilledButton(
-                    onPressed: _viewModel.enviando ? null : _enviar,
+                    onPressed: widget.viewModel.enviando ? null : _enviar,
                     child: const Text('Entrar'),
                   ),
                 ),

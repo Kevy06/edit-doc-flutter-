@@ -4,7 +4,9 @@ import '../utils/validadores.dart';
 import '../viewmodels/auth_viewmodel.dart';
 
 class CadastroView extends StatefulWidget {
-  const CadastroView({super.key});
+  const CadastroView({super.key, required this.viewModel});
+
+  final AuthViewModel viewModel;
 
   @override
   State<CadastroView> createState() => _CadastroViewState();
@@ -12,20 +14,38 @@ class CadastroView extends StatefulWidget {
 
 class _CadastroViewState extends State<CadastroView> {
   final _formKey = GlobalKey<FormState>();
-  final _viewModel = AuthViewModel();
+  final _nome = TextEditingController();
+  final _email = TextEditingController();
+  final _senha = TextEditingController();
 
   @override
   void dispose() {
-    _viewModel.dispose();
+    _nome.dispose();
+    _email.dispose();
+    _senha.dispose();
     super.dispose();
   }
 
   Future<void> _enviar() async {
     if (!_formKey.currentState!.validate()) return;
-    await _viewModel.cadastrar();
+    final cadastrado = await widget.viewModel.cadastrar(
+      nome: _nome.text,
+      email: _email.text,
+      senha: _senha.text,
+    );
     if (!mounted) return;
+    if (!cadastrado) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.viewModel.erro ?? 'Não foi possível cadastrar.'),
+        ),
+      );
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cadastro simulado com sucesso!')),
+      const SnackBar(
+        content: Text('Cadastro simulado com sucesso! Entre para continuar.'),
+      ),
     );
     Navigator.pop(context);
   }
@@ -43,10 +63,13 @@ class _CadastroViewState extends State<CadastroView> {
               shrinkWrap: true,
               padding: const EdgeInsets.all(24),
               children: [
-                Text('Crie sua conta',
-                    style: Theme.of(context).textTheme.headlineSmall),
+                Text(
+                  'Crie sua conta',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 20),
                 TextFormField(
+                  controller: _nome,
                   decoration: const InputDecoration(
                     labelText: 'Nome Completo',
                     border: OutlineInputBorder(),
@@ -56,6 +79,7 @@ class _CadastroViewState extends State<CadastroView> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
+                  controller: _email,
                   decoration: const InputDecoration(
                     labelText: 'E-mail',
                     border: OutlineInputBorder(),
@@ -65,6 +89,7 @@ class _CadastroViewState extends State<CadastroView> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
+                  controller: _senha,
                   decoration: const InputDecoration(
                     labelText: 'Senha',
                     border: OutlineInputBorder(),
@@ -74,9 +99,9 @@ class _CadastroViewState extends State<CadastroView> {
                 ),
                 const SizedBox(height: 20),
                 ListenableBuilder(
-                  listenable: _viewModel,
+                  listenable: widget.viewModel,
                   builder: (context, _) => FilledButton(
-                    onPressed: _viewModel.enviando ? null : _enviar,
+                    onPressed: widget.viewModel.enviando ? null : _enviar,
                     child: const Text('Cadastrar'),
                   ),
                 ),

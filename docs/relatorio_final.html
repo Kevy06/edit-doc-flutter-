@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Relatório Técnico e Reflexivo — Nexo Docs</title>
+  <style>
+    @page { size: A4; margin: 22mm 20mm; }
+    body { color: #202433; font: 11pt/1.55 Arial, sans-serif; }
+    h1 { color: #233b78; font-size: 23pt; line-height: 1.2; margin: 0 0 22px; }
+    h2 { color: #304c91; font-size: 15pt; margin: 25px 0 8px; }
+    p { margin: 0 0 12px; text-align: justify; }
+    ul { margin: 6px 0 14px; padding-left: 22px; }
+    li { margin: 0 0 5px; }
+    .subtitle { color: #65708a; font-size: 11pt; margin-bottom: 26px; }
+    .note { background: #f1f4fb; border-left: 4px solid #5874bc; padding: 10px 13px; margin-top: 20px; }
+    code { font: 9.5pt Consolas, monospace; color: #263c71; }
+  </style>
+</head>
+<body>
+  <h1>Relatório Técnico e Reflexivo</h1>
+  <div class="subtitle">Nexo Docs — DocEditor MVVM · Etapa final</div>
+
+  <h2>1. Alterações realizadas no código</h2>
+  <p>A versão inicial migrada para MVVM mantinha os documentos somente em memória. Ampliei o modelo <code>Documento</code> com um identificador e os métodos <code>toMap()</code> e <code>fromMap()</code>. Depois criei <code>DocumentoStorageService</code>, que converte a lista para JSON com <code>jsonEncode</code>, grava a string em <code>shared_preferences</code> e reconstrói os objetos com <code>jsonDecode</code> na inicialização.</p>
+  <p>O <code>DocumentosViewModel</code> carrega os dados de forma assíncrona e concentra as operações de criar, selecionar, salvar e excluir. A biblioteca abre <code>EditorView</code> para alterar cada documento. As Views chamam métodos do ViewModel e não acessam diretamente o serviço de armazenamento.</p>
+  <p>Implementei <code>PreferencesService</code> para salvar a escolha de tema e os dados de identificação da sessão. O <code>TemaViewModel</code> controla a alternância entre tema claro e escuro. O <code>AuthViewModel</code> integra as telas de login e cadastro ao serviço local de demonstração, restaura a sessão ao abrir o app e remove a sessão ao sair.</p>
+
+  <h2>2. Mudanças estruturais</h2>
+  <p>Antes, o estado dos documentos existia somente enquanto o processo estava aberto. Agora, o fluxo é View → ViewModel → Service → <code>shared_preferences</code>; na leitura, o caminho é percorrido no sentido inverso. O ViewModel notifica as Views com <code>notifyListeners()</code> e <code>ListenableBuilder</code>.</p>
+  <p>Cada documento é convertido em um mapa com <code>id</code> e <code>conteudo</code>. <code>jsonEncode()</code> transforma a lista de mapas em uma string armazenável. No carregamento, <code>jsonDecode()</code> recria a lista e <code>Documento.fromMap()</code> converte cada mapa para o modelo. As chamadas de leitura e escrita usam <code>async</code>/<code>await</code>, e o app aguarda a restauração inicial antes de escolher a rota e o tema.</p>
+  <p>As rotas <code>/</code>, <code>/cadastro</code>, <code>/home</code> e <code>/editor</code> conectam as quatro telas. O <code>main.dart</code> instancia os ViewModels compartilhados e injeta suas dependências nas Views. O tema e a sessão são restaurados antes da exibição do fluxo principal. O logout limpa a identificação da sessão, sem remover documentos nem a preferência de tema.</p>
+
+  <h2>3. Dificuldades encontradas e soluções</h2>
+  <p>O primeiro teste de interface verificava o login antes da conclusão da leitura assíncrona de preferências. Ajustei o teste para inicializar o mock de <code>shared_preferences</code> e aguardar a inicialização com <code>pumpAndSettle()</code>. Depois disso, os testes de interface e persistência passaram.</p>
+  <p>O comando <code>flutter</code> do ambiente local ficou aguardando no mecanismo de inicialização do SDK, sem apresentar saída. Executei o Flutter Tool diretamente pelo snapshot do SDK; assim foi possível concluir a análise estática, os testes e a compilação Web. A aplicação foi compilada com o caminho base <code>/edit-doc-flutter-/</code>, necessário para este repositório no GitHub Pages.</p>
+  <p>Para o APK, reduzi a memória do Gradle conforme o roteiro. A tentativa parou antes de iniciar o Gradle porque não há Android SDK instalado neste Windows (<code>No Android SDK found</code>). Por isso, não foi possível gerar nem validar o instalador Android neste ambiente.</p>
+  <p>A versão Web compilada foi enviada para a branch <code>gh-pages</code> sem reescrever o histórico. A consulta pública da configuração do Pages retornou <code>404</code>, então a hospedagem ainda não está ativa nas configurações do repositório. É necessário escolher <strong>Settings → Pages → Deploy from a branch → gh-pages → /(root)</strong> para liberar o endereço público.</p>
+
+  <h2>Resultados e limites observados</h2>
+  <ul>
+    <li><code>flutter analyze --no-pub</code>: sem problemas encontrados.</li>
+    <li><code>flutter test --no-pub</code>: quatro testes aprovados, cobrindo tela inicial, persistência e CRUD, tema e restauração da sessão.</li>
+    <li><code>flutter build web --release --base-href "/edit-doc-flutter-/"</code>: compilação concluída em <code>build/web</code>.</li>
+    <li>APK Android: pendente, pois este computador não tem Android SDK configurado.</li>
+    <li>GitHub Pages: arquivos enviados para <code>gh-pages</code>; ativação do Pages ainda pendente nas configurações do repositório.</li>
+  </ul>
+  <p>O cadastro é local e em memória, pois o roteiro não define um backend de usuários. A conta <code>prof@email.com</code> / <code>123456</code> é apenas para demonstração. A sessão persistida contém nome e e-mail; a senha não é salva. Contas cadastradas desaparecem ao reiniciar, portanto essa solução não deve ser usada com credenciais reais.</p>
+  <div class="note"><strong>Revisão antes da entrega:</strong> este relatório descreve os resultados observados nesta execução. Revise a redação e acrescente qualquer experiência pessoal que não esteja registrada aqui antes de enviá-lo como reflexão autoral.</div>
+</body>
+</html>

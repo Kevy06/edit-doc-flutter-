@@ -38,4 +38,4 @@ O APK é gerado em `build/app/outputs/flutter-apk/app-release.apk`. O relatório
 
 ## Publicação Web
 
-A versão publicada usa a branch `gh-pages` e o caminho base `/edit-doc-flutter-/`. O endereço esperado é <https://kevy06.github.io/edit-doc-flutter-/>.
+Os arquivos Web de produção já foram enviados para a branch `gh-pages`, com o caminho base `/edit-doc-flutter-/`. Para ativar a hospedagem, selecione **Settings → Pages → Deploy from a branch → gh-pages → /(root)**. Depois da ativação, o endereço esperado é <https://kevy06.github.io/edit-doc-flutter-/>.

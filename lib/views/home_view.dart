@@ -4,6 +4,7 @@ import '../models/documento.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/documentos_viewmodel.dart';
 import '../viewmodels/tema_viewmodel.dart';
+import 'editor_view.dart';
 
 const nomeDesenvolvedor = 'Kevilyn Bitencourt';
 
@@ -20,18 +21,29 @@ class HomeView extends StatelessWidget {
   final TemaViewModel temaViewModel;
 
   Future<void> _criarDocumento(BuildContext context) async {
+    late final Documento documento;
     try {
-      final documento = await documentosViewModel.novo();
-      if (context.mounted) {
-        Navigator.pushNamed(context, '/editor', arguments: documento.id);
-      }
-    } catch (_) {
+      documento = await documentosViewModel.novo();
+    } catch (erro, pilha) {
+      debugPrint('Falha ao criar documento: $erro\\n$pilha');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível criar o documento.')),
+          SnackBar(content: Text('Erro ao criar documento: $erro')),
         );
       }
+      return;
     }
+
+    if (!context.mounted) return;
+    documentosViewModel.abrir(documento.id);
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => EditorView(
+          viewModel: documentosViewModel,
+          documentoId: documento.id,
+        ),
+      ),
+    );
   }
 
   Future<void> _sair(BuildContext context) async {

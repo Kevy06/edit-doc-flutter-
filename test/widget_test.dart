@@ -18,8 +18,10 @@ void main() {
     await tester.pumpWidget(const MeuApp());
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'prof@email.com');
-    await tester.enterText(find.byType(TextFormField).at(1), '123456');
+    expect(find.text('E-mail: prof@email.com'), findsOneWidget);
+    expect(find.text('Senha: 123456'), findsOneWidget);
+    await tester.tap(find.text('Preencher dados de teste'));
+    await tester.ensureVisible(find.text('Entrar'));
     await tester.tap(find.text('Entrar'));
     await tester.pumpAndSettle();
 

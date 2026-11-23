@@ -59,6 +59,35 @@ class _LoginViewState extends State<LoginView> {
                   'Acesse sua biblioteca',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
+                const SizedBox(height: 16),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Acesso de demonstração',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Use esta conta para avaliar o aplicativo.'),
+                        const SizedBox(height: 8),
+                        const Text('E-mail: prof@email.com'),
+                        const Text('Senha: 123456'),
+                        TextButton.icon(
+                          onPressed: () {
+                            _email.text = 'prof@email.com';
+                            _senha.text = '123456';
+                          },
+                          icon: const Icon(Icons.person_outline),
+                          label: const Text('Preencher dados de teste'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: _email,

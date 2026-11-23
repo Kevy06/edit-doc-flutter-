@@ -106,6 +106,7 @@ class DocumentosViewModel extends ChangeNotifier {
     }
   }
 
+  // Use o literal: deslocamentos de 32 bits podem virar zero no JavaScript.
   String _novoId() =>
-      '${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(1 << 32)}';
+      '${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(0x100000000)}';
 }

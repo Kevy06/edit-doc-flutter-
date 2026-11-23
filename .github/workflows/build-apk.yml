@@ -37,6 +37,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Analyze and test
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Test document creation in Chrome
+        run: flutter test --platform chrome
+
       - name: Build release APK
         run: flutter build apk --release
 

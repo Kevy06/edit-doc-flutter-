@@ -12,6 +12,22 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  // Executar também com flutter test --platform chrome para cobrir os IDs web.
+  test('carrega exemplos e cria documentos com IDs distintos', () async {
+    final vm = DocumentosViewModel();
+    addTearDown(vm.dispose);
+    await vm.carregar();
+    expect(vm.erro, isNull);
+    expect(vm.documentos, hasLength(2));
+
+    for (var i = 0; i < 50; i++) {
+      final documento = await vm.novo();
+      expect(documento.id, isNotEmpty);
+      expect(vm.documentoSelecionado?.id, documento.id);
+    }
+    expect(vm.documentos.map((d) => d.id).toSet(), hasLength(52));
+  });
+
   test(
     'documentos são serializados e recuperados após recriar o ViewModel',
     () async {
